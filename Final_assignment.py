@@ -420,4 +420,3 @@ def ShortestPath(orig_address, dest_address):
     plt.savefig(output_fig)
     return fig
         
-    
