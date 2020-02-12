@@ -308,7 +308,7 @@ def Visualiser(geodata, transport_method, interactive=None, classified=None):
     
     #produce a classified static map
     elif(classified == "yes"):
-        StaticMap(geodata, geodata["classified"], transport_method)
+        StaticMap(geodata, geodata["classified"], transport_method, bins)
     
     #produce a static map if interactive parameter is not present
     else:
