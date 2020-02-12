@@ -1,3 +1,5 @@
+# https://github.com/AutoGIS-2019/final-assignment-sonjakoivisto/blob/master/Final_notebook.ipynb can run and check the code here
+
 #import modules and dependencies
 #If this is giving an error about scalebar, run: "pip install matplotlib-scalebar" in the terminal
 import pandas as pd
@@ -418,4 +420,3 @@ def ShortestPath(orig_address, dest_address):
     plt.savefig(output_fig)
     return fig
         
-    
