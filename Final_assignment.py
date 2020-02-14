@@ -92,12 +92,14 @@ def TableJoiner(filepaths):
     for i, fp in enumerate(filepaths):
 
         #read in the file
-        data = pd.read_csv(fp, sep=";", usecols=["from_id", "bike_f_t", "pt_r_t", "car_r_t"])
+        data = pd.read_csv(fp, sep=";", usecols=["from_id", "bike_f_t", "bike_s_t", "pt_r_t", "pt_m_t", "car_r_t",
+                                                "car_m_t", "walk_t"])
         #get the cell number
         cell_ID = fp.split("_")[-1][:-4]
         #create new names for each added columns by the number of the file under processing (i)
-        new_names = {"from_id": "YKR_ID", "bike_f_t": "bike_f_t_" + str(i), "pt_r_t": "pt_r_t_" + str(i),
-                    "car_r_t": "car_r_t_" + str(i)}
+        new_names = {"from_id": "YKR_ID", "bike_f_t": "bike_f_t_" + str(i), "bike_s_t": "bike_s_t_" + str(i), 
+                     "pt_r_t": "pt_r_t_" + str(i), "pt_m_t": "pt_m_t_" + str(i), "car_m_t": "car_m_t_" + str(i),
+                    "car_r_t": "car_r_t_" + str(i), "walk_t": "walk_t_" + str(i)}
         data= data.rename(columns=new_names)
     
         #merge file with grid on the id of cells and remove no data values
@@ -106,24 +108,40 @@ def TableJoiner(filepaths):
         grid = grid.dropna()
 
     #initialise empty columns for minimum travel times
-    grid["min_t_bike"] = None
-    grid["min_t_car"] = None
-    grid["min_t_pt"] = None
+    grid["min_t_bikef"] = None
+    grid["min_t_bikes"] = None
+    grid["min_t_carr"] = None
+    grid["min_t_carm"] = None
+    grid["min_t_ptr"] = None
+    grid["min_t_ptm"] = None
+    grid["min_t_walk"] = None
 
     
     #if there are multiple destination points, count the minimum travel time to closest destination point
     if(len(filepaths)>1):
         
-        #first assign all columns starting with "bike" to variable bike_cols (with list comprehension)
-        bike_cols = [col for col in grid if col.startswith("bike")]
+        #first assign all columns starting with "bike_f" to variable bike_cols (with list comprehension)
+        bikef_cols = [col for col in grid if col.startswith("bike_f")]
         #apply minimum function to those columns and save the value to min column. Repeat for others.
-        grid["min_t_bike"] = grid[bike_cols].apply(min, axis=1)
+        grid["min_t_bikef"] = grid[bikef_cols].apply(min, axis=1)
         
-        car_cols = [col for col in grid if col.startswith("car")]
-        grid["min_t_car"] = grid[car_cols].apply(min, axis=1)
+        bikes_cols = [col for col in grid if col.startswith("bike_s")]
+        grid["min_t_bikes"] = grid[bikes_cols].apply(min, axis=1)
         
-        pt_cols = [col for col in grid if col.startswith("pt")]
-        grid["min_t_pt"] = grid[pt_cols].apply(min, axis=1)
+        carr_cols = [col for col in grid if col.startswith("car_r")]
+        grid["min_t_carr"] = grid[carr_cols].apply(min, axis=1)
+        
+        carm_cols = [col for col in grid if col.startswith("car_m")]
+        grid["min_t_carm"] = grid[carm_cols].apply(min, axis=1)
+        
+        ptr_cols = [col for col in grid if col.startswith("pt_r")]
+        grid["min_t_ptr"] = grid[ptr_cols].apply(min, axis=1)
+        
+        ptm_cols = [col for col in grid if col.startswith("pt_m")]
+        grid["min_t_ptm"] = grid[ptm_cols].apply(min, axis=1)
+        
+        walk_cols = [col for col in grid if col.startswith("walk")]
+        grid["min_t_walk"] = grid[walk_cols].apply(min, axis=1)
         
     return grid
 
@@ -280,17 +298,30 @@ def Visualiser(geodata, transport_method, interactive=None, classified=None):
     """
             
     #make the column name which should be visualised according to user input
-    if(transport_method == "bike"):
-        column_name = "min_t_bike"
+    if(transport_method == "fast bike"):
+        column_name = "min_t_bikef"
+    
+    elif(transport_method == "slow bike"):
+        column_name = "min_t_bikes"
+        
+    elif(transport_method == "public transport rush"):
+        column_name = "min_t_ptr"
         
     elif(transport_method == "public transport"):
-        column_name = "min_t_pt"
+        column_name = "min_t_ptm"
+        
+    elif(transport_method == "car rush"):
+        column_name = "min_t_carr"
         
     elif(transport_method == "car"):
-        column_name = "min_t_car"
+        column_name = "min_t_carm"
+        
+    elif(transport_method == "walk"):
+        column_name = "min_t_walk"
         
     else:
-        print("Transport method should be one of the following: bike, public transport or car. Please insert a string")
+        print("Please insert valid transport method in a string format. Options are: walk, slow bike, fast bike, car, \
+        car rush, public transport, public transport rush")
             
     
     #define class breaks to array seen below (upper limits), apply this classification to pt and car travel times
