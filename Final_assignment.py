@@ -108,12 +108,12 @@ def TableJoiner(filepaths):
         grid = grid.dropna()
 
     #initialise empty columns for minimum travel times
-    grid["min_t_bikef"] = None
-    grid["min_t_bikes"] = None
-    grid["min_t_carr"] = None
-    grid["min_t_carm"] = None
-    grid["min_t_ptr"] = None
-    grid["min_t_ptm"] = None
+    grid["min_t_bike_f"] = None
+    grid["min_t_bike_s"] = None
+    grid["min_t_car_r"] = None
+    grid["min_t_car_m"] = None
+    grid["min_t_pt_r"] = None
+    grid["min_t_pt_m"] = None
     grid["min_t_walk"] = None
 
     
@@ -123,22 +123,22 @@ def TableJoiner(filepaths):
         #first assign all columns starting with "bike_f" to variable bike_cols (with list comprehension)
         bikef_cols = [col for col in grid if col.startswith("bike_f")]
         #apply minimum function to those columns and save the value to min column. Repeat for others.
-        grid["min_t_bikef"] = grid[bikef_cols].apply(min, axis=1)
+        grid["min_t_bike_f"] = grid[bikef_cols].apply(min, axis=1)
         
         bikes_cols = [col for col in grid if col.startswith("bike_s")]
-        grid["min_t_bikes"] = grid[bikes_cols].apply(min, axis=1)
+        grid["min_t_bike_s"] = grid[bikes_cols].apply(min, axis=1)
         
         carr_cols = [col for col in grid if col.startswith("car_r")]
-        grid["min_t_carr"] = grid[carr_cols].apply(min, axis=1)
+        grid["min_t_car_r"] = grid[carr_cols].apply(min, axis=1)
         
         carm_cols = [col for col in grid if col.startswith("car_m")]
-        grid["min_t_carm"] = grid[carm_cols].apply(min, axis=1)
+        grid["min_t_car_m"] = grid[carm_cols].apply(min, axis=1)
         
         ptr_cols = [col for col in grid if col.startswith("pt_r")]
         grid["min_t_ptr"] = grid[ptr_cols].apply(min, axis=1)
         
         ptm_cols = [col for col in grid if col.startswith("pt_m")]
-        grid["min_t_ptm"] = grid[ptm_cols].apply(min, axis=1)
+        grid["min_t_pt_m"] = grid[ptm_cols].apply(min, axis=1)
         
         walk_cols = [col for col in grid if col.startswith("walk")]
         grid["min_t_walk"] = grid[walk_cols].apply(min, axis=1)
@@ -291,30 +291,30 @@ def Visualiser(geodata, transport_method, interactive=None, classified=None):
     """
     This function is meant for visualising the minimum travel time to multiple destinations with 
     a certain transportation method (any of the destiantions).The first argument is a geodataframe 
-    containing travel times. Second argument is a transportation method (bike, public transport or car) 
-    which you want to visualise. The third agrument is optional and can be added to obtain interactive 
-    map as a result. If you want to visualise travel times to a single destination, use multiple maps 
-    function.
+    containing travel times. Second argument is a transportation method (walk, slow bike, fast bike, car,
+    car rush, public transport, public transport rush) which you want to visualise. The third agrument 
+    is optional and can be added to obtain interactive map as a result. If you want to visualise travel 
+    times to a single destination, use multiple maps function.
     """
             
     #make the column name which should be visualised according to user input
     if(transport_method == "fast bike"):
-        column_name = "min_t_bikef"
+        column_name = "min_t_bike_f"
     
     elif(transport_method == "slow bike"):
-        column_name = "min_t_bikes"
+        column_name = "min_t_bike_s"
         
     elif(transport_method == "public transport rush"):
-        column_name = "min_t_ptr"
+        column_name = "min_t_pt_r"
         
     elif(transport_method == "public transport"):
-        column_name = "min_t_ptm"
+        column_name = "min_t_pt_m"
         
     elif(transport_method == "car rush"):
-        column_name = "min_t_carr"
+        column_name = "min_t_car_r"
         
     elif(transport_method == "car"):
-        column_name = "min_t_carm"
+        column_name = "min_t_car_m"
         
     elif(transport_method == "walk"):
         column_name = "min_t_walk"
