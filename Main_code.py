@@ -11,6 +11,7 @@ import mapclassify
 import matplotlib.pyplot as plt
 from matplotlib_scalebar.scalebar import ScaleBar
 import contextily as ctx
+import folium
 import os.path 
 from pyproj import CRS
 ## if geocube has not been installed before use "conda install -c conda-forge geocube" in terminal
