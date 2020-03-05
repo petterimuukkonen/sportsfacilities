@@ -4,9 +4,9 @@
 
 ### Aim of the project
 
-*Combine LIPAS database of sports facilities with Helsinki Travel Time Matrix
-*Produce raster files measuring the accessibility of different types of sports facilities in Helsinki Metropolitan area for further GIS analysis
-*Visualise the accessibility of sports places with Python to have an idea of the results
+* Combine LIPAS database of sports facilities with Helsinki Travel Time Matrix
+* Produce raster files measuring the accessibility of different types of sports facilities in Helsinki Metropolitan area for further GIS analysis
+* Visualise the accessibility of sports places with Python to have an idea of the results
 
 ### Input data: 
 
