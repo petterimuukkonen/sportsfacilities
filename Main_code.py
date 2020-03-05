@@ -63,7 +63,7 @@ def GeodataframeToTiff(geodata, lipastype, lipasname):
     Function has been designed for spatial resolution of 250m x 250m (MetropAccess_YKR_grid).
     """
     # defining attributes that will be tranformed into TIFF-files
-    attr_list = ["min_t_bike_f", "min_t_bike_s","min_t_pt_r","min_t_pt_m","min_t_car_r","min_t_car_m", "min_t_walk"]
+    attr_list = ["min_t_bike_f", "min_t_bike_s","min_t_pt_r","min_t_pt_m_t","min_t_car_r","min_t_car_m", "min_t_walk", "min_t_car_sl", "min_t_pt_m_tt"]
     
     # creating a raster cube from geodataframe and selected attribute values
     cube = make_geocube(vector_data=geodata, measurements= attr_list, resolution=(250, -250))
@@ -78,7 +78,9 @@ def GeodataframeToTiff(geodata, lipastype, lipasname):
     cube.min_t_pt_r.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_r_t.tiff")
     cube.min_t_car_r.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_car_r_t.tiff")
     cube.min_t_bike_s.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_bike_s_t.tiff")
-    cube.min_t_pt_m.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_m_t.tiff")
+    cube.min_t_pt_m_t.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_m_t.tiff")
+    cube.min_t_pt_m_tt.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_m_tt.tiff")
+    cube.min_t_car_sl.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_car_sl_t.tiff")
     cube.min_t_car_m.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_car_m_t.tiff")
     cube.min_t_walk.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_walk_f_t.tiff")
     print("Files saved.")
@@ -130,13 +132,14 @@ def TableJoiner(filepaths):
 
         #read in the file
         data = pd.read_csv(fp, sep=";", usecols=["from_id", "bike_f_t", "bike_s_t", "pt_r_t", "pt_m_t", "car_r_t",
-                                                "car_m_t", "walk_t"])
+                                                "car_m_t", "walk_t", "car_sl_t", "pt_m_tt"])
         #get the cell number
         cell_ID = fp.split("_")[-1][:-4]
         #create new names for each added columns by the number of the file under processing (i)
         new_names = {"from_id": "YKR_ID", "bike_f_t": "bike_f_t_" + str(i), "bike_s_t": "bike_s_t_" + str(i), 
-                     "pt_r_t": "pt_r_t_" + str(i), "pt_m_t": "pt_m_t_" + str(i), "car_m_t": "car_m_t_" + str(i),
-                    "car_r_t": "car_r_t_" + str(i), "walk_t": "walk_t_" + str(i)}
+                     "pt_r_t": "pt_r_t_" + str(i), "pt_m_t": "pt_m_t_" + str(i), "pt_m_tt": "pt_m_tt_" + str(i), "car_m_t": 
+                     "car_m_t_" + str(i),"car_r_t": "car_r_t_" + str(i), "car_sl_t": "car_sl_t_" + str(i) ,"walk_t": "walk_t_" + 
+                     str(i)}
         data= data.rename(columns=new_names)
     
         #merge file with grid on the id of cells and remove no data values
@@ -149,8 +152,10 @@ def TableJoiner(filepaths):
     grid["min_t_bike_s"] = None
     grid["min_t_car_r"] = None
     grid["min_t_car_m"] = None
+    grid["min_t_car_sl"] = None
     grid["min_t_pt_r"] = None
-    grid["min_t_pt_m"] = None
+    grid["min_t_pt_m_t"] = None
+    grid["min_t_pt_m_tt"] = None
     grid["min_t_walk"] = None
 
     
@@ -171,21 +176,25 @@ def TableJoiner(filepaths):
         carm_cols = [col for col in grid if col.startswith("car_m")]
         grid["min_t_car_m"] = grid[carm_cols].apply(min, axis=1)
         
+        carsl_cols = [col for col in grid if col.startswith("car_sl")]
+        grid["min_t_car_sl"] = grid[carsl_cols].apply(min, axis=1)
+        
         ptr_cols = [col for col in grid if col.startswith("pt_r")]
         grid["min_t_pt_r"] = grid[ptr_cols].apply(min, axis=1)
         
-        ptm_cols = [col for col in grid if col.startswith("pt_m")]
-        grid["min_t_pt_m"] = grid[ptm_cols].apply(min, axis=1)
+        ptm_cols = [col for col in grid if col.startswith("pt_m_t_")]
+        grid["min_t_pt_m_t"] = grid[ptm_cols].apply(min, axis=1)
+        
+        pttt_cols = [col for col in grid if col.startswith("pt_m_tt_")]
+        grid["min_t_pt_m_tt"] = grid[pttt_cols].apply(min, axis=1)
         
         walk_cols = [col for col in grid if col.startswith("walk")]
         grid["min_t_walk"] = grid[walk_cols].apply(min, axis=1)
         
     return grid
 
-def Visualiser(geodata, column_name, lipasname):
-    
-    travel_method = column_name.split("_")[2]
-    
+def Visualiser(geodata, column_name, lipasname, travelmethod):
+        
     #define class breaks to array seen below (upper limits), apply this classification to pt and car travel times
     bins = [0,5,10,15,20,25,30,40,50,60]
     classifier = mapclassify.UserDefined.make(bins)
@@ -220,9 +229,58 @@ def Visualiser(geodata, column_name, lipasname):
     ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length), arrowprops=dict(facecolor='black', width=5,                 headwidth=15),ha='center', va='center', fontsize=20, xycoords=ax.transAxes)
     
     #add title and show map
-    ax.set_title("Travel times to " +lipasname+ " by " + travel_method, fontsize=24)
+    ax.set_title("Travel times to " + lipasname + " by " + travelmethod , fontsize=24)
 
     #save and return fig
     output_fig = "outputs/traveltimes" + column_name + ".png"
     plt.savefig(output_fig)
     return output_fig
+
+
+def InteractiveMap(geodata, column_name, transport_method):
+    """
+    Creates an interactive map of the column that you want to visualise using folium. Takes geodataframe, 
+    the column name, transport method as a string and the bins for classification (list of numbers that are 
+    the upper limit of each class) as parameters. 
+    """
+    #add a basemap
+    m = folium.Map(location=[60.25, 24.8], tiles = 'cartodbpositron', zoom_start=10, control_scale=True,
+                           attribution = "Data: Helsinki Travel Time Matrix")
+
+    #define class breaks to array seen below 
+    bins = [0,5,10,15,20,25,30,40,50,60, 200]
+    
+    #add the choropleth
+    folium.Choropleth(
+    geo_data=geodata,
+    name="Travel times" + transport_method,
+    data=geodata,
+    columns=["YKR_ID", column_name],
+    key_on="feature.properties.YKR_ID",
+    bins = bins,
+    fill_color="RdYlBu",
+    fill_opacity=0.7,
+    line_opacity=0.2,
+    line_color="white",
+    line_weight=0,
+    highlight=True,
+    legend_name="Travel times by " + transport_method + ", in minutes",
+    ).add_to(m)
+
+    #add tooltips (info when hovering over) as geoJson
+    folium.GeoJson(geodata, name="travel time", smooth_factor=2,
+    style_function=lambda x: {'weight':0.01,'color':'#807e7e', 'fillOpacity':0},
+    highlight_function=lambda x: {'weight':1.5, 'color':'black'},
+    tooltip=folium.GeoJsonTooltip(fields=["YKR_ID", column_name],labels=True, sticky=False)).add_to(m)
+
+            
+    #display layer control
+    folium.LayerControl().add_to(m)
+
+    #save and return the map
+    outfp= "outputs/traveltimes" + transport_method + ".html"
+    m.save(outfp)
+    display(m)
+
+    return m
+        
