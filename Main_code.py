@@ -163,6 +163,15 @@ def GetLipasUserFriendly(filepath):
     """ This function makes it easier for the user to choose what kind of lipas data to get and returns it as a df"""
     # Importing lipas code data as csv from for example r"data/Codes_LIPAS_csv.csv"
     lipas_codes = pd.read_csv(filepath)
+    
+    # Dropping alternatives that are assosciated with polygon or linestring data (not from subgroup titles)
+    for index, row in lipas_codes.iterrows():
+         if np.isnan(row['alaryhmä']):
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('alue')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('alueet')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('rata')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('reitti')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('reitit')]
     # Print the list of subgroups
     for index, row in lipas_codes.iterrows():
         if row['alaryhmä'] > 0:
