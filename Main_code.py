@@ -7,6 +7,10 @@ import os.path
 import requests
 import geojson
 from geocube.api.core import make_geocube
+<<<<<<< HEAD
+import math
+import shapely
+=======
 import mapclassify
 import matplotlib.pyplot as plt
 from matplotlib_scalebar.scalebar import ScaleBar
@@ -14,11 +18,12 @@ import contextily as ctx
 import folium
 import os.path 
 from pyproj import CRS
+>>>>>>> 17d060fe2483f6597d58f11465eccf1016969fab
 ## if geocube has not been installed before use "conda install -c conda-forge geocube" in terminal
 
 def GetLipasData(typecode, typename):
     """
-    This function fetches Lipas data from WFS and sets crs - EMIL muokkailee ja käy läpi :)
+    This function fetches Lipas data from WFS and sets crs
     """
         # Fetching data from WFS using requests, in json format, using bounding box over the helsinki area
     r = requests.get("""http://lipas.cc.jyu.fi/geoserver/lipas/ows?service=wfs&version=2.0.0&request=GetFeature&typeNames=lipas:lipas_"""+typecode+"""_"""+typename+"""&bbox=361500.0001438780454919,6665250.0001345984637737,403750.0001343561452813,6698000.0001281434670091,EPSG:3067&outputFormat=json""")
@@ -182,6 +187,73 @@ def TableJoiner(filepaths):
         
     return grid
 
+<<<<<<< HEAD
+def GetLipasUserFriendly(filepath):
+    """ This function makes it easier for the user to choose what kind of lipas data to get and returns it as a df"""
+    # Importing lipas code data as csv from for example r"data/Codes_LIPAS_csv.csv"
+    lipas_codes = pd.read_csv(filepath)
+    
+    # Dropping alternatives that are assosciated with polygon or linestring data (not from subgroup titles)
+    for index, row in lipas_codes.iterrows():
+         if np.isnan(row['alaryhmä']):
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('alue')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('alueet')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('rata')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('reitti')]
+                lipas_codes = lipas_codes[~lipas_codes['Liikuntapaikkatyyppi=karttatason nimi suomeksi'].str.contains('reitit')]
+    # Print the list of subgroups
+    for index, row in lipas_codes.iterrows():
+        if row['alaryhmä'] > 0:
+            print(int(row['alaryhmä']), row['Liikuntapaikkatyyppi=karttatason nimi suomeksi'])
+
+    # User gives input as the code
+    user_input = int(input('Anna kyseisen liikuntapaikkatyypin numero'))
+
+    # Fetching the start and stop index for the lipas codes
+    for index, row in lipas_codes.iterrows():
+        if user_input == row['alaryhmä']:
+            start = index
+            break
+    for index, row in lipas_codes.iterrows():
+        if user_input < row['alaryhmä']:
+            stop = index
+            break
+    # Printing the items in the subgroup
+    print("Valitse liikuntapaikktyyppi")
+    for index, row in lipas_codes.iterrows():
+        if start < index and stop > index:
+            print(row['Koodi'], row['Liikuntapaikkatyyppi=karttatason nimi suomeksi'])
+    # Another user input as the code
+    user_input = int(input("Liikuntapaikkatyypin koodi"))
+    # Fetching the correct items from the WFS
+    for index, row in lipas_codes.iterrows():
+        if row['Koodi'] == user_input:
+            r_string = """http://lipas.cc.jyu.fi/geoserver/lipas/ows?service=wfs&version=2.0.0&request=GetFeature&typeNames=lipas:""" + row['karttatason tekninen nimi'] + """&bbox=361500.0001438780454919,6665250.0001345984637737,403750.0001343561452813,6698000.0001281434670091,EPSG:3067&outputFormat=json"""
+            r = requests.get(r_string)
+            json = r.json()
+            # If there's no items at all there will be a message printed
+            if json['totalFeatures'] < 1:
+                print("Ei yhtäkään kyseistä paikkaa löydetty")
+            # The fetched items are printed out for the user
+            else:
+
+                lipas_data = gpd.GeoDataFrame.from_features(geojson.loads(r.content))
+
+    # Dropping all rows without point geometry
+    for index, row in lipas_data.iterrows():
+                    if type(row['geometry']) != shapely.geometry.point.Point:
+                        lipas_data.drop(index, inplace=True)
+
+    if len(lipas_data) == 0:
+        print("Ei yhtäkään kyseistä paikkaa löydetty")
+    else:
+        print("Löysimme seuraavat paikat:")
+        print(lipas_data['nimi_fi'])
+    # Removing unnecessary attributes from lipas_data
+    lipas_data = lipas_data[["geometry","id","nimi_fi","nimi_se","tyyppikoodi","tyyppi_nimi_fi"]]
+    
+    return lipas_data
+=======
 def Visualiser(geodata, column_name, lipasname):
     
     travel_method = column_name.split("_")[2]
@@ -226,3 +298,4 @@ def Visualiser(geodata, column_name, lipasname):
     output_fig = "outputs/traveltimes" + column_name + ".png"
     plt.savefig(output_fig)
     return output_fig
+>>>>>>> 17d060fe2483f6597d58f11465eccf1016969fab
