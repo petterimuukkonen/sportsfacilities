@@ -15,12 +15,12 @@ from matplotlib_scalebar.scalebar import ScaleBar
 import contextily as ctx
 import folium
 import os.path 
-from pyproj import CRS
 
 
 def GetLipasData(typecode, typename):
     """
-    This function fetches Lipas data from WFS and sets crs. First argument is 4 digit typecode and second is the typename in Finnish. Exhaustive list of these can be found from file LIPAS_codes.csv.
+    This function fetches LIPAS data from WFS and sets its crs. LIPAS data is returned to the user with simplified attributes; id, name of the sport place in Finnish and Swedish, type code and type name in Finnish. 
+    Arguments: First argument is 4 digit typecode of the sport facility and second is the typename of the sport facility in Finnish. Exhaustive list of these can be found from data/Codes_LIPAS.csv.
     """
         # Fetching data from WFS using requests, in json format, using bounding box over the helsinki area
     r = requests.get("""http://lipas.cc.jyu.fi/geoserver/lipas/ows?service=wfs&version=2.0.0&request=GetFeature&typeNames=lipas:lipas_"""+typecode+"""_"""+typename+"""&bbox=361500.0001438780454919,6665250.0001345984637737,403750.0001343561452813,6698000.0001281434670091,EPSG:3067&outputFormat=json""")
@@ -37,12 +37,16 @@ def GetLipasData(typecode, typename):
     return lipas_data
 
 
-def GetLipasUserFriendly(filepath):
+def GetLipasUserFriendly():
     """ 
-    This function makes it easier for the user to choose what kind of lipas data to get and returns it as a dataframe. As an argument, insert the filepath to csv file containing LIPAS codes. First, the function is asking you to insert a code of one of the main sport facilities type and after that brings out the subgroups of that particular main group. Sports facilities that are type of area or line have been filtered out.
+    Function is made for more user friendly approach of fetcing LIPAS data. The user doesn't need to know in advance what typecode or typename the sport facility has. LIPAS data is returned to the user with simplified attributes; id, name of the sport place in Finnish and Swedish, type code and type name in Finnish. No arguments are needed. 
+    1. First, the function presents a list of main sport facility types. User inserts a code of the wanted main sport facility type presented in the list. 
+    2. After that, the function prints a list of the subgroups of the chosen main group (sports facilities that areas or lines have been filtered out). User inserts a code of chosen subgroup presented in the list.
+    3. The function prints the sport facilities found from chosen subgroup. The found sport facilities are returned as a dataframe to the user.
     """
     
-    # Importing lipas code data as csv from for example r"data/Codes_LIPAS_csv.csv"
+    # Importing lipas code data as csv from for example r"data/Codes_LIPAS.csv"
+    filepath = r"data/Codes_LIPAS.csv"
     lipas_codes = pd.read_csv(filepath)
     
     # Dropping alternatives that are assosciated with polygon or linestring data (not from subgroup titles)
@@ -73,6 +77,7 @@ def GetLipasUserFriendly(filepath):
             break
             
     # Printing the items in the subgroup
+    print("")
     print("Valitse liikuntapaikkatyyppi")
     for index, row in lipas_codes.iterrows():
         if start < index and stop > index:
@@ -90,7 +95,7 @@ def GetLipasUserFriendly(filepath):
             
             # If there's no items at all there will be a message printed
             if json['totalFeatures'] < 1:
-                print("Ei yhtäkään kyseistä paikkaa löydetty")
+                print("Yhtäkään liikuntapaikkaa ei löydetty")
             # The fetched items are printed out for the user
             else:
 
@@ -102,9 +107,10 @@ def GetLipasUserFriendly(filepath):
                         lipas_data.drop(index, inplace=True)
 
     if len(lipas_data) == 0:
-        print("Ei yhtäkään kyseistä paikkaa löydetty")
+        print("Yhtäkään liikuntapaikkaa ei löydetty")
     else:
-        print("Löysimme seuraavat paikat:")
+        print("")
+        print("Löysimme seuraavat liikuntapaikat:")
         print(lipas_data['nimi_fi'])
         
     # Removing unnecessary attributes from lipas_data
@@ -118,7 +124,9 @@ def GetLipasUserFriendly(filepath):
 
 def CreateYkrList(lipas_data):
     """
-    This function creates a list of YKR_IDs based on the location of sport facilities in lipas_data. For fething right YKR_IDs MetropAccess_YKR_grid is used (Helsinki greater region).
+    This function creates a list of grid IDs (YKR_ID) based on the location of sport facilities in lipas_data.
+    Arguments: LIPAS dataframe fetched by GetLipasData() or GetLipasUserFriendly() function.
+    For this function to work, user needs to download MetropAccess_YKR_grid.shp file into data folder.
     """
     
     # Set filepath  and read YKR grid
@@ -137,7 +145,10 @@ def CreateYkrList(lipas_data):
     
 def FileFinder(YKR_ids):
     """
-    Gets the data for certain cell of Helsinki Travel time matrix. Insert a list of YKR ids. 
+    Gets the data for certain cell of Helsinki Travel Time Matrix. 
+    Arguments: user inserts a list of YKR IDs.
+    Returns a list of filepaths to the right files in Helsinki Travel Time Matrix.
+    For this function to work, user needs to download travel time matrix 2018 data into data/HelsinkiRegionTravelTimeMatrix2018 folder.  
     """
     #create a list for the outputs
     filepaths = []
@@ -169,7 +180,8 @@ def FileFinder(YKR_ids):
 
 def TableJoiner(filepaths):
     """
-    Gets the YKR grid and merges the grid with accessibility data from chosen grid cells. Takes a list of filepaths of Travel Time Matrix files (txt) as the argument.
+    Joines YKR-grid and Helsinki region travel time matrix 2018 data together, calculates minimum travel times to each cell and returns a geodataframe.
+    Arguments: a list of filepaths to the travel time matrix files
     """
 
     #access the YKR grid to get the spatial extent and geometry (has to be saved in data folder)
@@ -248,10 +260,11 @@ def TableJoiner(filepaths):
     
 def GeodataframeToTiff(geodata, lipastype, lipasname):
     """
-    This function turns values of already defined attributes from geodataframe grid into TIFF-rasters.
-    Function takes geodataframe as geodata, and sport facility code as lipastype and name as lipasname.
+    This function turns minimum travel times of each travel method (10) into a TIFF-raster.
+    Arguments: Function takes a geodataframe (made with TableJoiner()-function) as geodata, and sport facility code as lipastype and name as lipasname.
     Geodataframe has to have minimum travel times to sport facility in columns specified in attr_list.
     Function has been designed for spatial resolution of 250m x 250m (MetropAccess_YKR_grid).
+    As a return user gets 10 tiff-files saved to output folder.
     """
     # defining attributes that will be tranformed into TIFF-files
     attr_list = ["min_t_bike_f", "min_t_bike_s","min_t_pt_r_t", "min_t_pt_r_tt","min_t_pt_m_t","min_t_car_r","min_t_car_m", "min_t_walk", "min_t_car_sl", "min_t_pt_m_tt"]
@@ -276,8 +289,8 @@ def GeodataframeToTiff(geodata, lipastype, lipasname):
 
 def Visualiser(geodata, column_name, lipasname):
     """
-    This function visualises the travel times on map. Takes geodataframe containing minimum travel times and column name 
-    of the column you want to visualise as inputs.
+    Visualises travel times on a static map and saves a png-file of the map in output folder. 
+    Arguments: geodataframe containing minimum travel times, the column name of the travel method user wants to visualise and the name of the sport facility (preferred in English, will be used in map title).
     """
     #remove nodata values for visualising
     geodata = geodata.copy()
@@ -316,7 +329,8 @@ def Visualiser(geodata, column_name, lipasname):
 
     #add north arrow
     x, y, arrow_length = 0.9, 0.2, 0.115
-    ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length), arrowprops=dict(facecolor='black', width=5,                 headwidth=15),ha='center', va='center', fontsize=20, xycoords=ax.transAxes)
+    ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length), arrowprops=dict(facecolor='black', width=5, headwidth=15),
+                ha='center', va='center', fontsize=20, xycoords=ax.transAxes)
     
     #add title and show map
     ax.set_title("Travel times to " + lipasname + " by " + travel_method , fontsize=24)
@@ -329,8 +343,8 @@ def Visualiser(geodata, column_name, lipasname):
 
 def InteractiveMap(geodata, column_name):
     """
-    Creates an interactive map of the column that you want to visualise using folium. Takes geodataframe and
-    the column name as parameters. 
+    Visualises travel times on an interactive map using folium. The presentation will be saved to output folder as a html-file.
+    Arguments: geodataframe containing minimum travel times and the column name of the travel method user wants to visualise. 
     """
     #remove noData values for visualising
     geodata = geodata.copy()
@@ -378,7 +392,3 @@ def InteractiveMap(geodata, column_name):
     m.save(outfp)
 
     return m
-        
-    
-
-    
