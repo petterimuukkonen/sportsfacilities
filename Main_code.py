@@ -148,7 +148,7 @@ def FileFinder(YKR_ids):
     Gets the data for certain cell of Helsinki Travel Time Matrix. 
     Arguments: user inserts a list of YKR IDs.
     Returns a list of filepaths to the right files in Helsinki Travel Time Matrix.
-    For this function to work, user needs to download travel time matrix 2018 data into data/HelsinkiRegionTravelTimeMatrix2018 folder.  
+    For this function to work, user needs to download travel time matrix 2018 data into data/HelsinkiRegion_TravelTimeMatrix2018 folder.  
     """
     #create a list for the outputs
     filepaths = []
@@ -164,7 +164,7 @@ def FileFinder(YKR_ids):
         folder = str(i)[0:4]
         
         #put together the filepath according to the filepaths when you unzip Travel Time Matrix
-        fp = r"data/HelsinkiTravelTimeMatrix2018/" + folder + "xxx/travel_times_to_ " + str(i) + ".txt"
+        fp = r"data/HelsinkiRegion_TravelTimeMatrix2018/" + folder + "xxx/travel_times_to_ " + str(i) + ".txt"
         #Print which file is under process and how many in total
         print("Processing file " + fp + ". Progress: " + str(num+1) + "/" + str(len(YKR_ids)))
         
@@ -180,7 +180,7 @@ def FileFinder(YKR_ids):
 
 def TableJoiner(filepaths):
     """
-    Joines YKR-grid and Helsinki region travel time matrix 2018 data together, calculates minimum travel times to each cell and returns a geodataframe.
+    Joines YKR-grid and Helsinki Region Travel Time Matrix 2018 data together, calculates minimum travel times to each cell and returns a geodataframe.
     Arguments: a list of filepaths to the travel time matrix files
     """
 
@@ -254,14 +254,18 @@ def TableJoiner(filepaths):
         walk_cols = [col for col in grid if col.startswith("walk")]
         grid["min_t_walk"] = grid[walk_cols].apply(min, axis=1)
         
+    # delete unnecessary travel time columns from the dataframe and leave only minimum travel times and YKR grid cell id
+    grid =  grid[['YKR_ID', 'min_t_walk', 'min_t_bike_f', 'min_t_bike_s', 'min_t_car_r', 'min_t_car_m', 'min_t_car_sl',
+             'min_t_pt_r_t', 'min_t_pt_r_tt', 'min_t_pt_m_t', 'min_t_pt_m_tt']]
+        
     return grid
 
 ## if geocube has not been installed before use "conda install -c conda-forge geocube" in terminal
     
-def GeodataframeToTiff(geodata, lipastype, lipasname):
+def GeodataframeToTiff(geodata, lipascode, lipasname):
     """
     This function turns minimum travel times of each travel method (10) into a TIFF-raster.
-    Arguments: Function takes a geodataframe (made with TableJoiner()-function) as geodata, and sport facility code as lipastype and name as lipasname.
+    Arguments: Function takes a geodataframe (made with TableJoiner()-function) as geodata, and sport facility code as lipascode and name as lipasname.
     Geodataframe has to have minimum travel times to sport facility in columns specified in attr_list.
     Function has been designed for spatial resolution of 250m x 250m (MetropAccess_YKR_grid).
     As a return user gets 10 tiff-files saved to output folder.
@@ -274,16 +278,16 @@ def GeodataframeToTiff(geodata, lipastype, lipasname):
     
         
     # writing all 
-    cube.min_t_bike_f.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_bike_f_t.tiff")
-    cube.min_t_pt_r_t.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_r_t.tiff")
-    cube.min_t_car_r.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_car_r_t.tiff")
-    cube.min_t_pt_r_tt.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_r_tt.tiff")
-    cube.min_t_bike_s.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_bike_s_t.tiff")
-    cube.min_t_pt_m_t.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_m_t.tiff")
-    cube.min_t_pt_m_tt.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_pt_m_tt.tiff")
-    cube.min_t_car_sl.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_car_sl_t.tiff")
-    cube.min_t_car_m.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_car_m_t.tiff")
-    cube.min_t_walk.rio.to_raster("outputs/"+lipastype + "_"+lipasname+"_walk_f_t.tiff")
+    cube.min_t_bike_f.rio.to_raster("outputs/"+lipascode+ "_"+lipasname+"_bike_f_t.tiff")
+    cube.min_t_pt_r_t.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_pt_r_t.tiff")
+    cube.min_t_car_r.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_car_r_t.tiff")
+    cube.min_t_pt_r_tt.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_pt_r_tt.tiff")
+    cube.min_t_bike_s.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_bike_s_t.tiff")
+    cube.min_t_pt_m_t.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_pt_m_t.tiff")
+    cube.min_t_pt_m_tt.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_pt_m_tt.tiff")
+    cube.min_t_car_sl.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_car_sl_t.tiff")
+    cube.min_t_car_m.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_car_m_t.tiff")
+    cube.min_t_walk.rio.to_raster("outputs/"+lipascode + "_"+lipasname+"_walk_f_t.tiff")
     print("Files saved.")
 
 

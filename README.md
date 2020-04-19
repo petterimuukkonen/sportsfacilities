@@ -10,13 +10,13 @@
 
 ### Input data: 
 
-- [Helsinki Travel Time Matrix 2018](https://blogs.helsinki.fi/accessibility/helsinki-region-travel-time-matrix-2018/), 
-- YKR grid 2018 (can be downloaded from the link above, make sure to use all 7 files that the shapefile consists of), 
+- [Helsinki Region Travel Time Matrix 2018](https://blogs.helsinki.fi/accessibility/helsinki-region-travel-time-matrix-2018/) (can be downloaded from the link), 
+- YKR grid (can be downloaded from the link above, make sure to use all 7 files that the shapefile consists of), 
 - [LIPAS data](https://www.lipas.fi/liikuntapaikat) for sports facilities, fetched using WFS
 
 ### Instructions for usage:
 
-You can test and run the code with limited example files in GitHub. Due to the size of input files, for full access to the data you need to download the data. Download the Travel Time Matrix and YKR grid data by clicking *Travel Time Matrix link*. Create a folder called "data" under the same folder where you are working. Place the YKR grid in the "data" folder and move the entire folder called "HelsinkiTravelTimeMatrix2018" under the data folder as well. Do not alter the files or filepaths inside HelsinkiTravelTimeMatrix2018.
+You can test and run the code with limited example files in GitHub. Due to the size of input files, for full access to the data you need to download the data to your local repository. Download the Travel Time Matrix and YKR grid data by clicking *Travel Time Matrix link*. Create a folder called "data" under the same folder where you are working. Place the YKR grid in the "data" folder and unzip the Helsinki region travel time matrix data into "HelsinkiRegion_TravelTimeMatrix2018" folder under the data. Do not alter the files or filepaths inside HelsinkiRegion_TravelTimeMatrix2018.
 
 ### Analysis process and the functions
 
